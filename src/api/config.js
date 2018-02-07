@@ -2,7 +2,7 @@
  * @Author: u14e 
  * @Date: 2018-02-05 14:27:01 
  * @Last Modified by: u14e
- * @Last Modified time: 2018-02-05 14:54:01
+ * @Last Modified time: 2018-02-06 11:33:19
  */
 
 export const commonParams = {
@@ -11,10 +11,10 @@ export const commonParams = {
   outCharset: 'utf-8',
   notice: 0,
   format: 'jsonp'
- }
+}
 
 export const options = {
-   param: 'jsonpCallback'
- }
+  param: 'jsonpCallback'
+}
 
 export const ERR_OK = 0

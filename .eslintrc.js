@@ -21,6 +21,7 @@ module.exports = {
   ],
   // add your custom rules here
   rules: {
+    'comma-dangle': 0,
     'eol-last': 0,
     'no-trailing-spaces': 0,
     // allow async-await

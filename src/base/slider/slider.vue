@@ -49,8 +49,8 @@ export default {
 
     window.addEventListener('resize', () => {
       if (!this.slider) return
-      this._setSliderWidth(true)  // 重新设置宽度
-      this.slider.refresh()       // slider也要刷新
+      this._setSliderWidth(true) // 重新设置宽度
+      this.slider.refresh() // slider也要刷新
     })
   },
   methods: {
@@ -115,8 +115,6 @@ export default {
 
 .slider
   min-height 1px
-  overflow hidden
-  position relative
   .slider-group
     position relative
     overflow hidden
@@ -153,4 +151,3 @@ export default {
         border-radius 5px
         background-color $color-text-ll
 </style>
-
