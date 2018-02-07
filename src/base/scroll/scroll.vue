@@ -20,6 +20,10 @@ export default {
     data: {
       type: Array,
       default: null
+    },
+    listenScroll: {
+      type: Boolean,
+      default: false
     }
   },
   mounted () {
@@ -34,12 +38,24 @@ export default {
         probeType: this.probeType,
         click: this.click
       })
+
+      // 如果监听滚动事件，就触发一个scroll事件
+      if (this.listenScroll) {
+        let that = this
+        this.scroll.on('scroll', pos => that.$emit('scroll', pos))
+      }
     },
     disable () {
       this.scroll && this.scroll.disable()
     },
     enable () {
       this.scroll && this.scroll.enable()
+    },
+    scrollTo () {
+      this.scroll && this.scroll.scrollTo.apply(this.scroll, arguments)
+    },
+    scrollToElement () {
+      this.scroll && this.scroll.scrollToElement.apply(this.scroll, arguments)
     },
     refresh () {
       this.scroll && this.scroll.refresh()

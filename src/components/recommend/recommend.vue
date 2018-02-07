@@ -43,11 +43,6 @@ import Scroll from '@/base/scroll/scroll'
 import Loading from '@/base/loading/loading'
 
 export default {
-  components: {
-    Slider,
-    Scroll,
-    Loading,
-  },
   data () {
     return {
       recommends: [],
@@ -81,6 +76,11 @@ export default {
         this.checkLoaded = true
       }
     }
+  },
+  components: {
+    Slider,
+    Scroll,
+    Loading,
   }
 }
 </script>
