@@ -2,7 +2,7 @@
  * @Author: u14e 
  * @Date: 2018-02-05 18:03:01 
  * @Last Modified by: u14e
- * @Last Modified time: 2018-02-08 20:54:53
+ * @Last Modified time: 2018-02-08 21:37:42
  */
 
 export function addClass (el, className) {
@@ -48,7 +48,7 @@ let vendor = (() => {
   return false
 })()
 
-export function prefixStyle(style) {
+export function prefixStyle (style) {
   // 不支持该属性
   if (vendor === false) {
     return false
