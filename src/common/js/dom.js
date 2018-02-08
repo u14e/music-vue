@@ -2,7 +2,7 @@
  * @Author: u14e 
  * @Date: 2018-02-05 18:03:01 
  * @Last Modified by: u14e
- * @Last Modified time: 2018-02-07 14:24:21
+ * @Last Modified time: 2018-02-08 20:54:53
  */
 
 export function addClass (el, className) {
@@ -26,4 +26,37 @@ export function getData (el, name, val) {
   } else {
     return el.getAttribute(name)
   }
+}
+
+let elementStyle = document.createElement('div').style
+
+let vendor = (() => {
+  let transformNames = {
+    webkit: 'webkitTransform',
+    Moz: 'MozTransform',
+    O: 'OTransform',
+    ms: 'msTransform',
+    standard: 'transform'
+  }
+
+  for (let key in transformNames) {
+    if (elementStyle[transformNames[key]] !== undefined) {
+      return key
+    }
+  }
+
+  return false
+})()
+
+export function prefixStyle(style) {
+  // 不支持该属性
+  if (vendor === false) {
+    return false
+  }
+  // 标准写法
+  if (vendor === 'standard') {
+    return style
+  }
+
+  return vendor + style.charAt(0).toUpperCase() + style.substr(1)
 }

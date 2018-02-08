@@ -1,15 +1,29 @@
 <template>
   <div class="music-list">
-    <div class="back">
+    <div class="back" @click="back">
       <i class="icon-back"></i>
     </div>
     <h1 class="title">{{ title }}</h1>
     <div class="bg-image" :style="bgStyle" ref="bgImage">
-      <div class="filter"></div>
+      <div class="play-wrapper">
+        <div class="play" v-show="songs.length > 0" ref="playBtn">
+          <i class="icon-play"></i>
+          <span class="text">随机播放全部</span>
+        </div>
+      </div>
     </div>
-    <scroll :data="songs" class="list" ref="list">
+    <div class="bg-layer" ref="layer"></div>
+    <scroll class="list" ref="list"
+      :data="songs"
+      :probeType="probeType"
+      :listenScroll="listenScroll"
+      @scroll="scroll"
+    >
       <div class="song-list-wrapper">
         <song-list :songs="songs"></song-list>
+      </div>
+      <div class="loding-container" v-show="!songs.length">
+        <loading></loading>
       </div>
     </scroll>
   </div>
@@ -18,6 +32,11 @@
 <script>
 import Scroll from '@/base/scroll/scroll'
 import SongList from '@/base/song-list/song-list'
+import Loading from '@/base/loading/loading'
+import { prefixStyle } from '@/common/js/dom'
+
+const RESERVED_HEIGHT = 42 // 预留的高度
+const transform = prefixStyle('transform')
 
 export default {
   props: {
@@ -36,17 +55,72 @@ export default {
       default: ''
     }
   },
+  data () {
+    return {
+      scrollY: -1,
+      scale: 1
+    }
+  },
   computed: {
     bgStyle () {
       return `background-image: url(${this.bgImage})`
     }
   },
+  created () {
+    this.probeType = 3
+    this.listenScroll = true
+  },
   mounted () {
-    this.$refs.list.$el.style.top = `${this.$refs.bgImage.clientHeight}px`
+    this.imageHeight = this.$refs.bgImage.clientHeight
+    this.MaxTranslateY = this.imageHeight - RESERVED_HEIGHT
+    this.$refs.list.$el.style.top = `${this.imageHeight}px`
+  },
+  methods: {
+    scroll (pos) {
+      this.scrollY = pos.y
+    },
+    back () {
+      this.$router.back()
+    }
+  },
+  watch: {
+    scrollY (newY) {
+      // 下拉图片放大
+      let scale = 1
+      const percent = Math.abs(newY / this.imageHeight)
+      if (newY > 0) {
+        scale += percent
+        this.zIndex = 10
+        this.$refs.bgImage.style[transform] = `scale(${scale})`
+        this.$refs.bgImage.style['zIndex'] = this.zIndex
+      }
+
+      // 滚动距离小于规定的最大移动距离时，才移动layer层
+      if (-newY <= this.MaxTranslateY && newY < 0) {
+        this.$refs.layer.style[transform] = `translate3d(0, ${newY}px, 0)`
+        if (this.zIndex !== 0) {
+          this.zIndex = 0
+          this.$refs.bgImage.style['paddingTop'] = '70%'
+          this.$refs.bgImage.style['height'] = 0
+          this.$refs.bgImage.style['zIndex'] = this.zIndex
+          this.$refs.playBtn.style['display'] = ''
+        }
+      } else {
+        // 移动到顶部时
+        if (this.zIndex !== 10) {
+          this.zIndex = 10
+          this.$refs.bgImage.style['paddingTop'] = 0
+          this.$refs.bgImage.style['height'] = RESERVED_HEIGHT + 'px'
+          this.$refs.bgImage.style['zIndex'] = this.zIndex
+          this.$refs.playBtn.style['display'] = 'none'
+        }
+      }
+    }
   },
   components: {
     Scroll,
-    SongList
+    SongList,
+    Loading
   }
 }
 </script>
@@ -89,14 +163,47 @@ export default {
     width 100%
     height 0
     padding-top 70%
+    transform-origin top
     background-size cover
+    .play-wrapper
+      position absolute
+      bottom 20px
+      z-index 50      
+      width 100%
+      .play
+        box-sizing border-box
+        width 135px
+        padding 7px 0
+        margin 0 auto
+        text-align center
+        border 1px solid $color-theme
+        color $color-theme
+        border-radius 100px
+        font-size 0
+        .icon-play
+          display inline-block
+          vertical-align middle
+          margin-right 6px
+          font-size $font-size-medium-x
+        .text
+          display inline-block
+          vertical-align middle
+          font-size $font-size-small
+  .bg-layer
+    position relative
+    height 100%
+    background-color $color-background
   .list
     position absolute
     top 0
     bottom 0
     width 100%
     background-color $color-background
-    overflow hidden
     .song-list-wrapper
       padding 20px 30px
+    .loading-container
+      position absolute
+      top 50%
+      width 100%
+      transform translateY(-50%)
 </style>

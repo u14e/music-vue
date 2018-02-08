@@ -52,11 +52,12 @@
 
 <script>
 import Scroll from '@/base/scroll/scroll'
-import { getData } from '@/common/js/dom'
+import { getData, prefixStyle } from '@/common/js/dom'
 import Loading from '@/base/loading/loading'
 
 const ANCHOR_HEIGHT = 18 // 锚点高度(css确定的)
 const TITLE_HEIGHT = 30 // 标题高度(css确定的)
+const transform = prefixStyle('transform')
 
 export default {
   props: {
@@ -100,7 +101,7 @@ export default {
       let fixedTop = (newVal > 0 && newVal < TITLE_HEIGHT) ? newVal - TITLE_HEIGHT : 0
       if (this.fixedTop === fixedTop) return
       this.fixedTop = fixedTop
-      this.$refs.fixed.style.transform = `translate3d(0, ${fixedTop}px, 0)`
+      this.$refs.fixed.style[transform] = `translate3d(0, ${fixedTop}px, 0)`
     }
   },
   created () {

@@ -35,7 +35,7 @@ export default {
     _getDetail () {
       // 在歌手详情页刷新时，获取不到数据，直接返回歌手列表页
       if (!this.singer.id) {
-        this.$router.replace({ name: 'singer' })
+        this.$router.back()
         return
       }
 
