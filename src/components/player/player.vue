@@ -20,18 +20,28 @@
           </div>
         </div>
         <div class="bottom">
+          <div class="progress-wrapper">
+            <span class="time time-l">{{ format(currentTime) }}</span>
+            <div class="progress-bar-wrapper">
+              <progress-bar
+                :percent="percent"
+                @percentChange="onProgressBarChange"
+              ></progress-bar>
+            </div>
+            <span class="time time-r">{{ format(currentSong.duration) }}</span>
+          </div>
           <div class="operators">
             <div class="icon i-left">
               <i class="icon-sequence"></i>
             </div>
-            <div class="icon i-left">
-              <i class="icon-prev"></i>
+            <div class="icon i-left" :class="disableCls">
+              <i @click="prev" class="icon-prev"></i>
             </div>
-            <div class="icon i-center" @click="togglePlaying">
+            <div class="icon i-center" @click="togglePlaying" :class="disableCls">
               <i :class="playIcon"></i>
             </div>
-            <div class="icon i-right">
-              <i class="icon-next"></i>
+            <div class="icon i-right" :class="disableCls">
+              <i @click="next" class="icon-next"></i>
             </div>
             <div class="icon i-right">
               <i class="icon-not-favorite"></i>
@@ -59,14 +69,27 @@
         </div>
       </div>
     </transition>
-    <audio ref="audio" :src="currentSong.url"></audio>
+    <audio
+      ref="audio"
+      :src="currentSong.url"
+      @canplay="ready"
+      @error="error"
+      @timeupdate="updateTime"
+    ></audio>
   </div>
 </template>
 
 <script>
 import { mapGetters, mapMutations } from 'vuex'
+import ProgressBar from '@/base/progress-bar/progress-bar'
 
 export default {
+  data () {
+    return {
+      songReady: false,
+      currentTime: 0
+    }
+  },
   computed: {
     playIcon () {
       return this.playing ? 'icon-pause' : 'icon-play'
@@ -77,11 +100,18 @@ export default {
     cdCls () {
       return this.playing ? 'play' : 'play pause'
     },
+    disableCls () {
+      return this.songReady ? '' : 'disable'
+    },
+    percent () {
+      return this.currentTime / this.currentSong.duration
+    },
     ...mapGetters([
       'fullScreen',
       'playlist',
       'currentSong',
-      'playing'
+      'playing',
+      'currentIndex'
     ])
   },
   methods: {
@@ -94,9 +124,70 @@ export default {
     togglePlaying () {
       this.setPlayingState(!this.playing)
     },
+    next () {
+      if (!this.songReady) return
+
+      let index = this.currentIndex + 1
+      if (index === this.playlist.length) {
+        index = 0
+      }
+      this.setCurrentIndex(index)
+      if (!this.playing) {
+        this.togglePlaying()
+      }
+
+      this.songReady = false
+    },
+    prev () {
+      if (!this.songReady) return
+
+      let index = this.currentIndex - 1
+      if (index === -1) {
+        index = this.playlist.length - 1
+      }
+      this.setCurrentIndex(index)
+      if (!this.playing) {
+        this.togglePlaying()
+      }
+
+      this.songReady = false
+    },
+    // 歌曲加载成功
+    ready () {  
+      this.songReady = true
+    },
+    // 歌曲加载失败
+    error () {
+      this.songReady = true
+    },
+    updateTime (e) {
+      this.currentTime = e.target.currentTime
+    },
+    onProgressBarChange (percent) {
+      this.$refs.audio.currentTime = this.currentSong.duration * percent
+      if (!this.playing) {
+        this.togglePlaying()
+      }
+    },
+    format (interval) {
+      interval = Math.floor(interval)
+      const minutes = Math.floor(interval / 60)
+      const seconds = this._pad(interval % 60)
+      return `${minutes}:${seconds}`
+    },
+    // 补位
+    _pad (num, n = 2) {
+      let len = num.toString().length
+      while (len < n) {
+        num = '0' + num
+        len++
+      }
+      return num
+    },
     ...mapMutations({
       setFullScreen: 'SET_FULL_SCREEN',
-      setPlayingState: 'SET_PLAYING_STATE'
+      setPlayingState: 'SET_PLAYING_STATE',
+      setCurrentIndex: 'SET_CURRENT_INDEX'
     })
   },
   watch: {
@@ -111,6 +202,9 @@ export default {
         newPlaying ? audio.play() : audio.pause() // 同上
       })
     }
+  },
+  components: {
+    ProgressBar
   }
 }
 </script>
@@ -202,12 +296,32 @@ export default {
       position absolute
       bottom 50px
       width 100%
+      .progress-wrapper
+        display flex
+        align-items center
+        width 80%
+        margin 0 auto
+        padding 10px 0
+        .time
+          flex 0 0 30px
+          width 30px
+          line-height 30px
+          font-size $font-size-small
+          color $color-text
+          &.time-l
+            text-align left
+          &.time-r
+            text-align right
+        .progress-bar-wrapper
+          flex 1
       .operators
         display flex
         align-items center
         .icon
           flex 1
           color $color-theme
+          &.disable
+            color $color-theme-d
           i
             font-size 30px
         .i-left

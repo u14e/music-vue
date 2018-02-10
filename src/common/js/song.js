@@ -15,7 +15,6 @@ export default class Song {
     this.image = image
     this.filename = `C400${this.mid}.m4a`
     if (urlMap[this.id]) {
-      console.log(urlMap[this.id])
       this.url = urlMap[this.id]
     } else {
       this._getUrl()
