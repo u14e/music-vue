@@ -10,16 +10,42 @@
           <h1 class="title">{{ currentSong.name }}</h1>
           <h2 class="subtitle">{{ currentSong.singer }}</h2>
         </div>
-        <div class="middle">
-          <div class="middle-l">
+        <div class="middle"
+          @touchstart.prevent="middleTouchStart"
+          @touchmove.prevent="middleTouchMove"
+          @touchend="middleTouchEnd"
+        >
+          <div class="middle-l" ref="middleL">
             <div class="cd-wrapper">
               <div class="cd">
                 <img :src="currentSong.image" class="image" :class="cdCls">
               </div>
             </div>
+            <div class="playing-lyric-wrapper">
+              <div class="playing-lyric">{{ playingLyric }}</div>
+            </div>
           </div>
+          <scroll class="middle-r"
+            :data="currentLyric && currentLyric.lines"
+            ref="lyricList"
+          >
+            <div class="lyric-wrapper">
+              <div v-if="currentLyric">
+                <p class="text"
+                  v-for="(line, index) in currentLyric.lines"
+                  :key="index"
+                  ref="lyricLine"
+                  :class="{ 'current': currentLineNum === index }"
+                >{{ line.txt }}</p>
+              </div>
+            </div>
+          </scroll>
         </div>
         <div class="bottom">
+          <div class="dot-wrapper">
+            <span class="dot" :class="{'active': currentShow === 'cd'}"></span>
+            <span class="dot" :class="{'active': currentShow === 'lyric'}"></span>
+          </div>
           <div class="progress-wrapper">
             <span class="time time-l">{{ format(currentTime) }}</span>
             <div class="progress-bar-wrapper">
@@ -83,14 +109,24 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
 import ProgressBar from '@/base/progress-bar/progress-bar'
+import Scroll from '@/base/scroll/scroll'
 import { playMode } from '@/common/js/config'
 import { shuffle } from '@/common/js/util'
+import Lyric from 'lyric-parser'
+import { prefixStyle } from '@/common/js/dom'
+
+const transform = prefixStyle('transform')
+const transitionDuration = prefixStyle('transitionDuration')
 
 export default {
   data () {
     return {
       songReady: false,
-      currentTime: 0
+      currentTime: 0,
+      currentLyric: null,
+      currentLineNum: 0,
+      currentShow: 'cd',
+      playingLyric: ''
     }
   },
   computed: {
@@ -125,6 +161,9 @@ export default {
       'sequenceList',
     ])
   },
+  created () {
+    this.touch = {}
+  },
   methods: {
     back () {
       this.setFullScreen(false)
@@ -134,17 +173,25 @@ export default {
     },
     togglePlaying () {
       this.setPlayingState(!this.playing)
+
+      if (this.currentLyric) {
+        this.currentLyric.togglePlay()
+      }
     },
     next () {
       if (!this.songReady) return
 
-      let index = this.currentIndex + 1
-      if (index === this.playlist.length) {
-        index = 0
-      }
-      this.setCurrentIndex(index)
-      if (!this.playing) {
-        this.togglePlaying()
+      if (this.playlist.length === 1) {
+        this.loop()
+      } else {
+        let index = this.currentIndex + 1
+        if (index === this.playlist.length) {
+          index = 0
+        }
+        this.setCurrentIndex(index)
+        if (!this.playing) {
+          this.togglePlaying()
+        }
       }
 
       this.songReady = false
@@ -152,13 +199,17 @@ export default {
     prev () {
       if (!this.songReady) return
 
-      let index = this.currentIndex - 1
-      if (index === -1) {
-        index = this.playlist.length - 1
-      }
-      this.setCurrentIndex(index)
-      if (!this.playing) {
-        this.togglePlaying()
+      if (this.playlist.length === 1) {
+        this.loop()
+      } else {
+        let index = this.currentIndex - 1
+        if (index === -1) {
+          index = this.playlist.length - 1
+        }
+        this.setCurrentIndex(index)
+        if (!this.playing) {
+          this.togglePlaying()
+        }
       }
 
       this.songReady = false
@@ -186,11 +237,19 @@ export default {
     loop () {
       this.$refs.audio.currentTime = 0
       this.$refs.audio.play()
+
+      if (this.currentLyric) {
+        this.currentLyric.seek(0)
+      }
     },
     onProgressBarChange (percent) {
-      this.$refs.audio.currentTime = this.currentSong.duration * percent
+      const currentTime = this.currentSong.duration * percent
+      this.$refs.audio.currentTime = currentTime
       if (!this.playing) {
         this.togglePlaying()
+      }
+      if (this.currentLyric) {
+        this.currentLyric.seek(currentTime * 1000)
       }
     },
     changeMode () {
@@ -208,6 +267,80 @@ export default {
     resetCurrentIndex (list) {
       let index = list.findIndex(item => item.id === this.currentSong.id)
       this.setCurrentIndex(index)
+    },
+    getLyric () {
+      this.currentSong.getLyric().then(lyric => {
+        this.currentLyric = new Lyric(lyric, this.handleLyric)
+        if (this.playing) {
+          this.currentLyric.play()
+        }
+      }).catch(() => {
+        // 获取失败时，要做清理操作
+        this.currentLyric = null
+        this.playingLyric = ''
+        this.currentLineNum = 0
+      })
+    },
+    handleLyric ({ lineNum, txt }) {
+      this.currentLineNum = lineNum
+      if (lineNum > 5) {
+        let lineEl = this.$refs.lyricLine[lineNum - 5]
+        this.$refs.lyricList.scrollToElement(lineEl, 1000)
+      } else {
+        this.$refs.lyricList.scrollTo(0, 0, 1000)
+      }
+      this.playingLyric = txt
+    },
+    middleTouchStart (e) {
+      this.touch.initated = true
+      this.touch.startX = e.touches[0].pageX
+      this.touch.startY = e.touches[0].pageY
+    },
+    middleTouchMove (e) {
+      if (!this.touch.initated) return
+
+      const deltaX = e.touches[0].pageX - this.touch.startX
+      const deltaY = e.touches[0].pageY - this.touch.startY
+      // 纵向滚动距离大于横向滚动距离时，不作滚动操作，避免歌词滚动和middle滚动两者都滚动
+      if (Math.abs(deltaY) > Math.abs(deltaX)) return
+
+      // 如果当前显示的是唱片，那歌词界面就默认的显示在原来位置，否则显示在唱片原有的位置
+      const left = this.currentShow === 'cd' ? 0 : -window.innerWidth
+      // 手指移动的偏移量-window.innerWidth ~ 0之间
+      const offsetWidth = Math.min(0, Math.max(-window.innerWidth, left + deltaX))
+      this.touch.percent = Math.abs(offsetWidth / window.innerWidth)
+      this.$refs.lyricList.$el.style[transform] = `translate3d(${offsetWidth}px, 0, 0)`
+      this.$refs.lyricList.$el.style[transitionDuration] = `0`
+      this.$refs.middleL.style['opacity'] = 1 - this.touch.percent
+      this.$refs.middleL.style[transitionDuration] = `0`
+    },
+    middleTouchEnd (e) {
+      let offsetWidth
+      let opacity
+      if (this.currentShow === 'cd') { // 左划
+        if (this.touch.percent > 0.1) {
+          offsetWidth = -window.innerWidth
+          this.currentShow = 'lyric'
+          opacity = 0
+        } else {
+          offsetWidth = 0
+          opacity = 1
+        }
+      } else { // 右划
+        if (this.touch.percent < 0.9) {
+          offsetWidth = 0
+          opacity = 1
+          this.currentShow = 'cd'
+        } else {
+          offsetWidth = -window.innerWidth
+          opacity = 0
+        }
+      }
+      const time = 300
+      this.$refs.lyricList.$el.style[transform] = `translate3d(${offsetWidth}px, 0, 0)`
+      this.$refs.lyricList.$el.style[transitionDuration] = `${time}ms`
+      this.$refs.middleL.style['opacity'] = opacity
+      this.$refs.middleL.style[transitionDuration] = `${time}ms`
     },
     format (interval) {
       interval = Math.floor(interval)
@@ -236,9 +369,15 @@ export default {
     currentSong (newSong, oldSong) {
       if (newSong.id === oldSong.id) return
 
-      this.$nextTick(() => {
+      // 清楚原先歌词里面的定时器
+      if (this.currentLyric) {
+        this.currentLyric.stop()
+      }
+      
+      setTimeout(() => {
         this.$refs.audio.play() // dom更新之后才能调用
-      })
+        this.getLyric()
+      }, 1000)
     },
     playing (newPlaying) {
       let audio = this.$refs.audio
@@ -248,7 +387,8 @@ export default {
     }
   },
   components: {
-    ProgressBar
+    ProgressBar,
+    Scroll
   }
 }
 </script>
@@ -336,10 +476,52 @@ export default {
               animation rotate 20s linear infinite
             .pause
               animation-play-state paused
+        .playing-lyric-wrapper
+          width 80%
+          margin 30px auto 0 auto
+          overflow hidden
+          text-align center
+          .playing-lyric
+            height 20px
+            line-height 20px
+            font-size $font-size-medium
+            color $color-text-l
+      .middle-r
+        display inline-block
+        vertical-align top
+        width 100%
+        height 100%
+        overflow hidden
+        .lyric-wrapper
+          width 80%
+          margin 0 auto
+          overflow hidden
+          text-align center
+          .text
+            line-height 32px
+            color $color-text-l
+            font-size $font-size-medium
+            &.current
+              color $color-text
     .bottom
       position absolute
       bottom 50px
       width 100%
+      .dot-wrapper
+        text-align center
+        font-size 0
+        .dot
+          display inline-block
+          vertical-align middle
+          width 8px
+          height 8px
+          margin 0 4px
+          border-radius 50%
+          background-color $color-text
+          &.active
+            width 20px
+            border-radius 5px
+            background-color $color-text-ll
       .progress-wrapper
         display flex
         align-items center
