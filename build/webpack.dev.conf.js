@@ -38,6 +38,30 @@ const devWebpackConfig = merge(baseWebpackConfig, {
           console.error(e)
         })
       })
+      app.get('/api/getCdInfo', function(req, res) {
+        const url = 'https://c.y.qq.com/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
+        axios.get(url, {
+          headers: {
+            referer: 'https://y.qq.com/n/yqq/playlist/',
+            host: 'c.y.qq.com'
+          },
+          params: req.query
+        }).then(response => {
+          let ret = response.data
+          if (typeof(ret) === 'string') {
+            console.log('+++++++++is string')
+            const reg = /^\w+\(({.+})\)$/
+            const matches = ret.match(reg)
+            if (matches) {
+              console.log('+++++++++mathches')
+              ret = JSON.parse(matches[1])
+            }
+          }
+          res.json(ret)
+        }).catch(e => {
+          console.error(e)
+        })
+      })
       app.get('/api/lyric', function(req, res) {
         const url = 'https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
         axios.get(url, {
@@ -49,7 +73,7 @@ const devWebpackConfig = merge(baseWebpackConfig, {
         }).then(response => {
           let ret = response.data
           if (typeof(ret) === 'string') {
-            const reg = /^\w+\(({[^()]+})\)$/
+            const reg = /^\w+\(({.+})\)$/
             const matches = ret.match(reg)
             if (matches) {
               ret = JSON.parse(matches[1])

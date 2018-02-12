@@ -2,7 +2,7 @@
  * @Author: u14e 
  * @Date: 2018-02-05 14:49:50 
  * @Last Modified by: u14e
- * @Last Modified time: 2018-02-06 12:12:09
+ * @Last Modified time: 2018-02-12 17:00:38
  */
 
 import jsonp from '@/common/js/jsonp'
@@ -37,6 +37,29 @@ export function getDiscList () {
     ein: 29,
     picmid: 1,
     format: 'json'
+  })
+
+  return axios.get(url, {
+    params: data
+  }).then(res => {
+    return Promise.resolve(res.data)
+  })
+}
+
+// 获取歌单的歌曲列表
+export function getSongList (disstid) {
+  const url = '/api/getCdInfo'
+
+  const data = Object.assign({}, commonParams, {
+    type: 1,
+    json: 1,
+    utf8: 1,
+    onlysong: 0,
+    disstid,
+    loginUin: 0,
+    hostUin: 0,
+    platform: 'yqq',
+    needNewCode: 0,
   })
 
   return axios.get(url, {

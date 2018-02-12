@@ -9,6 +9,8 @@ const state = {
   sequenceList: [], // 原始播放列表
   mode: playMode.sequence, // 播放模式
   currentIndex: -1, // 当前播放缩影
+
+  disc: {},
 }
 
 export default state
