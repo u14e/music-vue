@@ -49,11 +49,9 @@ const devWebpackConfig = merge(baseWebpackConfig, {
         }).then(response => {
           let ret = response.data
           if (typeof(ret) === 'string') {
-            console.log('+++++++++is string')
             const reg = /^\w+\(({.+})\)$/
             const matches = ret.match(reg)
             if (matches) {
-              console.log('+++++++++mathches')
               ret = JSON.parse(matches[1])
             }
           }

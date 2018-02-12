@@ -2,7 +2,7 @@
  * @Author: u14e 
  * @Date: 2018-02-05 14:27:01 
  * @Last Modified by: u14e
- * @Last Modified time: 2018-02-07 11:25:44
+ * @Last Modified time: 2018-02-12 17:59:39
  */
 
 export const commonParams = {
@@ -14,7 +14,8 @@ export const commonParams = {
 }
 
 export const options = {
-  param: 'jsonpCallback'
+  param: 'jsonpCallback',
+  prefix: 'jp'
 }
 
 export const ERR_OK = 0
