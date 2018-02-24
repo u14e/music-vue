@@ -16,20 +16,37 @@
             </li>
           </ul>
         </div>
+        <div class="search-history" v-show="searchHistory.length">
+          <h1 class="title">
+            <span class="text">搜索历史</span>
+            <span class="clear" @click="showConfirm">
+              <i class="icon-clear"></i>
+            </span>
+          </h1>
+          <search-list @select="addQuery" @delete="deleteSearchHistory" :searches="searchHistory"></search-list>
+        </div>
       </div>
     </div>
     <div class="search-result" v-show="query">
-      <suggest :query="query"></suggest>
+      <suggest @select="saveSearch" :query="query"></suggest>
     </div>
+    <confirm ref="confirm"
+      @confirm="clearSearchHistory" 
+      confirmBtnText="清空"
+      text="是否清空所有搜索历史"
+    ></confirm>
     <router-view></router-view>
   </div>
 </template>
 
 <script>
 import SearchBox from '@/base/search-box/search-box'
+import SearchList from '@/base/search-list/search-list'
+import Confirm from '@/base/confirm/confirm'
 import Suggest from '@/components/suggest/suggest'
 import { getHotKey } from '@/api/search'
 import { ERR_OK } from '@/api/config'
+import { mapActions, mapGetters } from 'vuex'
 // import { playlistMixin } from '@/common/js/mixin'
 
 export default {
@@ -38,6 +55,11 @@ export default {
       hotKey: [],
       query: ''
     }
+  },
+  computed: {
+    ...mapGetters([
+      'searchHistory'
+    ])
   },
   created () {
     this._getHotKey()
@@ -57,17 +79,31 @@ export default {
     },
     onQueryChange (query) {
       this.query = query
-    }
+    },
+    saveSearch () {
+      this.saveSearchHistory(this.query)
+    },
+    showConfirm () {
+      this.$refs.confirm.show()
+    },
+    ...mapActions([
+      'saveSearchHistory',
+      'deleteSearchHistory',
+      'clearSearchHistory',
+    ])
   },
   components: {
     SearchBox,
-    Suggest
+    Suggest,
+    SearchList,
+    Confirm
   }
 }
 </script>
 
 <style lang="stylus">
 @import '~common/stylus/variable'
+@import '~common/stylus/mixin'
 
 .search
   .search-box-wrapper
@@ -94,6 +130,22 @@ export default {
           background-color $color-highlight-background
           font-size $font-size-medium
           color $color-text-l
+      .search-history
+        position relative
+        margin 0 20px
+        .title
+          display flex
+          align-items center
+          height 40px
+          font-size $font-size-medium
+          color $color-text-l
+          .text
+            flex 1
+          .clear
+            extend-click()
+            .icon-clear
+              font-size $font-size-medium
+              color $color-text-d
   .search-result
     position fixed
     top 178px
