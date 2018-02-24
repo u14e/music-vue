@@ -10,7 +10,7 @@ const state = {
   playlist: [], // 播放列表(根据播放模式变化)
   sequenceList: [], // 原始播放列表
   mode: playMode.sequence, // 播放模式
-  currentIndex: -1, // 当前播放缩影
+  currentIndex: -1, // 当前播放索引
 
   // 选中的歌单
   disc: {},

@@ -576,6 +576,7 @@ export default {
     display flex
     align-items center
     position fixed
+    z-index 180
     left 0
     bottom 0
     height 60px
