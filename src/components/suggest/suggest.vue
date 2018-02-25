@@ -116,6 +116,9 @@ export default {
       }
       this.$emit('select')
     },
+    refresh () {
+      this.$refs.suggest.refresh()
+    },
     _genResult (data) {
       let ret = []
 
