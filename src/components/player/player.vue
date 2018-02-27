@@ -98,8 +98,7 @@
     <playlist ref="playlist"></playlist>
     <audio
       ref="audio"
-      :src="currentSong.url"
-      @canplay="ready"
+      @play="ready"
       @error="error"
       @timeupdate="updateTime"
       @ended="end"
@@ -348,10 +347,11 @@ export default {
   },
   watch: {
     currentSong (newSong, oldSong) {
-      if (!newSong.id) return
+      if (!newSong.id || !newSong.url) return
 
       if (newSong.id === oldSong.id) return
 
+      this.songReady = false
       // 清楚原先歌词里面的定时器
       if (this.currentLyric) {
         this.currentLyric.stop()
@@ -360,17 +360,22 @@ export default {
         this.currentLineNum = 0
       }
       
+      this.$refs.audio.src = newSong.url
+      this.$refs.audio.play()
+
+      // 若歌曲 5s 未播放，则认为超时，修改状态确保可以切换歌曲。
       clearTimeout(this.timer)
       this.timer = setTimeout(() => {
-        this.$refs.audio.play() // dom更新之后才能调用
-        this.getLyric()
-      }, 1000)
+        this.songReady = true
+      }, 5000)
+
+      this.getLyric()      
     },
     playing (newPlaying) {
+      if (!this.songReady) return
+
       let audio = this.$refs.audio
-      this.$nextTick(() => {
-        newPlaying ? audio.play() : audio.pause() // 同上
-      })
+      newPlaying ? audio.play() : audio.pause()
     }
   },
   components: {
