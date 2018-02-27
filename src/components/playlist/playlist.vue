@@ -21,12 +21,12 @@
             >
               <i class="current" :class="getCurrentIcon(item)"></i>
               <span class="text">{{ item.name }}</span>
-              <span class="like"><i class="icon-not-favorite"></i></span>
+              <span class="like" v-show="false"><i class="icon-not-favorite"></i></span>
               <span class="delete" @click.stop="deleteOne(item)"><i class="icon-delete"></i></span>
             </li>
           </transition-group>
         </scroll>
-        <div class="list-operate">
+        <div class="list-operate" v-show="false">
           <div class="add">
             <i class="icon-add"></i>
             <span class="text">添加歌曲到队列</span>

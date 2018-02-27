@@ -249,6 +249,7 @@ export default {
     },
     getLyric () {
       this.currentSong.getLyric().then(lyric => {
+        // if (this.currentSong.lyric !== lyric) return
         this.currentLyric = new Lyric(lyric, this.handleLyric)
         if (this.playing) {
           this.currentLyric.play()
@@ -354,9 +355,13 @@ export default {
       // 清楚原先歌词里面的定时器
       if (this.currentLyric) {
         this.currentLyric.stop()
+        this.currentTime = 0
+        this.playingLyric = ''
+        this.currentLineNum = 0
       }
       
-      setTimeout(() => {
+      clearTimeout(this.timer)
+      this.timer = setTimeout(() => {
         this.$refs.audio.play() // dom更新之后才能调用
         this.getLyric()
       }, 1000)
